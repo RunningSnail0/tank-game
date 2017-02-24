@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8" />
+		<title>tank game</title>
+		<style>
+			*{ margin:0; padding:0;}
+			.map{ width:600px; height:600px; position:relative; background:#000;}
+			.MyTank{ width:40px; height:40px; position:absolute; background:url(img/img.png) no-repeat 0 0; }
+			.EnemyTank{ width:40px; height:40px; position:absolute; background:url(img/img.png) no-repeat -41px 0; }
+			.BETank{ width:40px; height:40px; position:absolute; background:url(img/img.png) no-repeat -83px 0;}
+			.t{ transform: rotate(0deg);}
+			.l{ transform:rotate(270deg);}
+			.b{ transform:rotate(180deg);}
+			.r{ transform:rotate(90deg);}
+			.Bullet{ width:2px; height:4px; position:absolute; background:yellow;}
+			.Bullet1{ background:deepskyblue; width:2px; height:4px; position:absolute;}
+			.bomb{ width:40px; height:40px; position:absolute; background:url(img/img.png) no-repeat 0 -48px;}
+			.bomb1{ background:url(img/img.png) no-repeat -42px -48px;}
+			.bomb2{ background:url(img/img.png) no-repeat -84px -48px;}
+			.bomb3{ background:url(img/img.png) no-repeat -125px -48px;}
+			.info{ width:400px; position:absolute; left:620px; top:50px;}
+			.pause{ position:absolute; width:100%; height:100%; top:0; left:0; background:rgb(96,96,96); color:#fff; display:none;text-align: center; line-height:600px; font-size:40px;}
+		</style>
+		<script src="js/setClassName.js"></script>
+		<script src="js/tank.js"></script>
+		<script src="js/bullet.js"></script>
+		<script src="js/setPot.js"></script>
+		<script src="js/isHit.js"></script>
+		<script src="js/bomb.js"></script>
+		<script src="js/setCommond.js"></script>
+	</head>
+	<body onkeydown="sendCommand()" onkeyup="keyUp()">
+		<!--地图-->
+		<div class="map">
+			<div class="pause">PAUSE</div>
+		</div>
+		<div class="info">
+			<h2>坦克大战</h2>
+			<p>说明：</p>
+			<p>按Enter键开始与暂停游戏,按W/D/S/A 分别代表上/右/下/左；按J发子弹</p>
+			<p>用js语言写的类似坦克大战小游戏</p>
+			<p>
+			暂时完成功能： <br/>①玩家可以控制坦克移动和发子弹；
+							<br/>②敌方坦克随机移动，一次只会发一颗子弹；
+							<br/>③不同坦克速度不一样;坦克移动不会超出地图边界；
+							<br/>④玩家坦克发出子弹与敌方坦克碰撞后敌方坦克死亡同时子弹也死亡，生成爆炸对象；
+							<br/>⑤敌方坦克也可消灭玩家坦克；
+			</p>
+			<p>图片素材来源网络</p>
+		</div>
+	</body>
+	<script>
+		
+		
+		//地图
+		var oMap=document.getElementsByClassName('map')[0];
+		//暂停
+		var oPause=document.getElementsByClassName('pause')[0]
+		//生成自己的坦克
+		var MyTank=new MyTank(260,560,0,4,'MyTank');
+		var MyTanks=new Array();
+		MyTanks.push(MyTank);
+		setPos(MyTanks);
+
+		//敌人坦克参数
+		
+		var enemyTanks=[
+			{ x:0 , y:0 , dir:2 , speed:2 , type:'EnemyTank'},
+			{ x:260 , y:0 , dir:2 , speed:2 , type:'EnemyTank'},
+			{ x:560, y:0 , dir:2 , speed:2 , type:'EnemyTank'},
+			{ x:0 , y:260 , dir:1 , speed:1 , type:'BETank'},
+			{ x:560, y:260 , dir:3 , speed:1 , type:'BETank'}
+		];
+		var EnemyTanks=[];
+		//生成敌人的坦克
+		for(var i=0; i<enemyTanks.length;i++){
+			EnemyTanks[i]=new EnemyTank(enemyTanks[i].x , enemyTanks[i].y , enemyTanks[i].dir , enemyTanks[i].speed , enemyTanks[i].type);
+			setPos(EnemyTanks);	
+		}
+		
+		 var stop=true;
+		//创建MyTankBullet数组
+		var MyBullets=new Array();
+		var MyBullet=null;
+		//创建EnemyBullet数组
+		var EnemyBullets=new Array();
+		var EnemyBullet=null;
+		//创建爆炸数组
+		var bombs=new Array();
+		
+		
+		//刷新元素
+		function flash(){
+			if(stop){
+				oPause.style.display="block";
+				return;
+			}else{
+				oPause.style.display="none";
+				
+				for(var i=0; i<EnemyTanks.length; i++){
+					if(EnemyTanks[i].isLive){
+						EnemyTanks[i].run();
+					}
+				}
+				
+				setPos(MyTanks);
+				setPos(EnemyTanks);
+				setPos(MyBullets);
+		
+				isHitEnemyTank();
+				isHitMyTank();
+				setPos(bombs);
+				for(var i=0 ; i<bombs.length; i++){
+					
+					bombs[i].animate();
+				}
+				
+				setPos(EnemyBullets);
+					
+			}
+			
+		}
+		
+		window.setInterval(flash,30);
+		
+		window.setInterval(function(){
+			delete1(EnemyTanks);
+			delete1(MyTanks);
+		},1000);
+			
+			
+		//删除死亡的坦克对象	
+		function delete1(arr){
+			for(var i=0; i<arr.length; i++){
+				if(arr[i].isLive==false){
+					
+						arr.splice(i,1);
+						console.log(arr);
+					
+				}
+				
+			}
+			
+			
+		}
+	</script>
+</html>
